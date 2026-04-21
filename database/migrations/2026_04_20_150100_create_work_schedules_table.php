@@ -1,0 +1,32 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('work_schedules', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->time('start_time');
+            $table->time('end_time');
+            $table->integer('grace_minutes')->default(15);
+            $table->json('work_days')->nullable();
+            $table->date('effective_from');
+            $table->date('effective_to')->nullable();
+            $table->boolean('is_default')->default(false);
+            $table->boolean('is_active')->default(true);
+            $table->string('approved_by')->nullable();
+            $table->text('notes')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('work_schedules');
+    }
+};
