@@ -5,9 +5,22 @@
 
 @section('content')
 <div class="bg-white rounded-2xl shadow-sm p-6">
-    <div class="flex items-center justify-between mb-6">
-        <a href="{{ route('admin.departments.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition">
-            + إضافة قسم
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
+        <div class="flex gap-3">
+            <a href="{{ route('admin.departments.create') }}"
+               class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition">
+                + إضافة قسم
+            </a>
+
+            <a href="{{ route('admin.departments.import.form') }}"
+               class="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition">
+                استيراد Excel
+            </a>
+        </div>
+
+        <a href="{{ route('admin.departments.template.excel') }}"
+           class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2.5 rounded-xl text-sm font-medium transition">
+            تحميل نموذج Excel
         </a>
     </div>
 
@@ -38,14 +51,17 @@
                         <div class="flex gap-2">
                             <a href="{{ route('admin.departments.edit', $dept) }}" class="text-blue-600 hover:text-blue-800 text-xs font-medium">تعديل</a>
                             <form method="POST" action="{{ route('admin.departments.destroy', $dept) }}" onsubmit="return confirm('هل أنت متأكد؟')">
-                                @csrf @method('DELETE')
+                                @csrf
+                                @method('DELETE')
                                 <button class="text-red-500 hover:text-red-700 text-xs font-medium" type="submit">حذف</button>
                             </form>
                         </div>
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="5" class="text-center py-10 text-gray-400">لا توجد أقسام</td></tr>
+                <tr>
+                    <td colspan="5" class="text-center py-10 text-gray-400">لا توجد أقسام</td>
+                </tr>
                 @endforelse
             </tbody>
         </table>

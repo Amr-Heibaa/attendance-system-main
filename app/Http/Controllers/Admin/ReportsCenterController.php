@@ -18,8 +18,6 @@ use App\Services\FinancialPolicyService;
 
 class ReportsCenterController extends Controller
 {
-
-
     private function statusLabel($status)
     {
         return match ($status) {
@@ -33,11 +31,38 @@ class ReportsCenterController extends Controller
         };
     }
 
+    private function applyEmployeeSearchToEmployeeQuery($query, ?string $search)
+    {
+        return $query->when($search, function ($q) use ($search) {
+            $q->where(function ($subQ) use ($search) {
+                $subQ->where('employee_code', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($userQ) use ($search) {
+                        $userQ->where('name', 'like', "%{$search}%");
+                    });
+            });
+        });
+    }
+
+    private function applyEmployeeSearchToRelatedEmployeeQuery($query, ?string $search)
+    {
+        return $query->when($search, function ($q) use ($search) {
+            $q->whereHas('employee', function ($employeeQ) use ($search) {
+                $employeeQ->where(function ($subQ) use ($search) {
+                    $subQ->where('employee_code', 'like', "%{$search}%")
+                        ->orWhereHas('user', function ($userQ) use ($search) {
+                            $userQ->where('name', 'like', "%{$search}%");
+                        });
+                });
+            });
+        });
+    }
 
     private function getMonthlyLeaves(Request $request)
     {
         $query = LeaveRequest::with(['employee.user', 'employee.department'])
             ->where('status', 'approved');
+
+        $this->applyEmployeeSearchToRelatedEmployeeQuery($query, $request->search);
 
         if ($request->from) {
             $query->whereDate('start_date', '>=', $request->from);
@@ -70,42 +95,36 @@ class ReportsCenterController extends Controller
                         ?? '-',
                     'month' => $first->start_date->format('Y-m'),
                     'days' => $group->sum('days_count'),
-                    'requests_count' => $group->count(), // الجديد
+                    'requests_count' => $group->count(),
                 ];
             })
             ->values();
     }
+
     public function index(Request $request)
     {
         $reportType = $request->get('report_type', 'summary');
         $from = $request->get('from');
         $to = $request->get('to');
+        $search = $request->get('search');
 
         $rows = collect();
         $summary = [];
 
-
-
-
-        $financialPolicyService = app(FinancialPolicyService::class);
-
-        $rows = $rows->map(function ($row) use ($financialPolicyService) {
-            $row->financial_penalty = $financialPolicyService->getPenaltyForAttendance($row);
-            return $row;
-        });
-
-
         if ($reportType === 'summary') {
-            $rows = $this->buildSummaryReport($from, $to);
+            $rows = $this->buildSummaryReport($from, $to, $search);
         }
 
         if ($reportType === 'detailed') {
             $query = AttendanceRecord::with(['employee.user', 'employee.department'])
                 ->latest('date');
 
+            $this->applyEmployeeSearchToRelatedEmployeeQuery($query, $search);
+
             if ($request->employee_id) {
                 $query->where('employee_id', $request->employee_id);
             }
+
             if ($from) {
                 $query->whereDate('date', '>=', $from);
             }
@@ -135,9 +154,12 @@ class ReportsCenterController extends Controller
             $query = AttendanceRecord::with(['employee.user', 'employee.department'])
                 ->latest('date');
 
+            $this->applyEmployeeSearchToRelatedEmployeeQuery($query, $search);
+
             if ($request->employee_id) {
                 $query->where('employee_id', $request->employee_id);
             }
+
             if ($from) {
                 $query->whereDate('date', '>=', $from);
             }
@@ -162,9 +184,12 @@ class ReportsCenterController extends Controller
             $query = LeaveRequest::with(['employee.user', 'leaveType', 'approvedBy'])
                 ->latest();
 
+            $this->applyEmployeeSearchToRelatedEmployeeQuery($query, $search);
+
             if ($request->employee_id) {
                 $query->where('employee_id', $request->employee_id);
             }
+
             if ($from) {
                 $query->whereDate('start_date', '>=', $from);
             }
@@ -184,7 +209,6 @@ class ReportsCenterController extends Controller
         if ($reportType === 'audit') {
             $query = AuditLog::with('user')->latest();
 
-
             if ($from) {
                 $query->whereDate('created_at', '>=', $from);
             }
@@ -195,7 +219,10 @@ class ReportsCenterController extends Controller
 
             $rows = $query->get();
         }
+
         $employeesQuery = Employee::with('user')->where('status', 'active');
+
+        $this->applyEmployeeSearchToEmployeeQuery($employeesQuery, $search);
 
         if (auth()->user()->hasRole('manager')) {
             $deptId = auth()->user()->employee?->department_id;
@@ -203,7 +230,8 @@ class ReportsCenterController extends Controller
         }
 
         $employees = $employeesQuery->get();
-        return view('admin.reports.index', compact('rows', 'summary', 'reportType', 'from', 'to', 'employees'));
+
+        return view('admin.reports.index', compact('rows', 'summary', 'reportType', 'from', 'to', 'employees', 'search'));
     }
 
     public function exportExcel(Request $request)
@@ -211,10 +239,12 @@ class ReportsCenterController extends Controller
         $reportType = $request->get('report_type', 'summary');
         $from = $request->get('from');
         $to = $request->get('to');
+        $search = $request->get('search');
 
         if ($reportType === 'summary') {
-            $data = $this->buildSummaryReport($from, $to)->map(function ($row) {
+            $data = $this->buildSummaryReport($from, $to, $search)->map(function ($row) {
                 return [
+                    'كود الموظف' => $row['employee_code'],
                     'الموظف' => $row['employee_name'],
                     'القسم' => $row['department_name'],
                     'الحضور' => $row['present_count'],
@@ -222,7 +252,6 @@ class ReportsCenterController extends Controller
                     'الغياب' => $row['absent_count'],
                     'الإجازات' => $row['leave_count'],
                     'ساعات العمل' => $row['work_hours'],
-
                     'الأذون' => $row['permissions_count'],
                     'المهمات' => $row['missions_count'],
                     'بدل الراحة' => $row['comp_off_count'],
@@ -233,12 +262,10 @@ class ReportsCenterController extends Controller
             return (new FastExcel($data))->download('summary-report.xlsx');
         }
 
-
-
         if ($reportType === 'monthly_leaves') {
-
             $data = $this->getMonthlyLeaves($request)->map(function ($row) {
                 return [
+                    'كود الموظف' => $row['employee_code'],
                     'الموظف' => $row['employee_name'],
                     'القسم' => $row['department_name'],
                     'الشهر' => $row['month'],
@@ -250,10 +277,11 @@ class ReportsCenterController extends Controller
             return (new FastExcel($data))->download('monthly-leaves-report.xlsx');
         }
 
-
         if ($reportType === 'detailed') {
             $query = AttendanceRecord::with(['employee.user', 'employee.department'])
                 ->latest('date');
+
+            $this->applyEmployeeSearchToRelatedEmployeeQuery($query, $search);
 
             if ($from) {
                 $query->whereDate('date', '>=', $from);
@@ -286,6 +314,7 @@ class ReportsCenterController extends Controller
             $data = $query->get()->map(function ($row) use ($days) {
                 return [
                     'الموظف' => $row->employee->user->name ?? '-',
+                    'كود الموظف' => $row->employee->employee_code ?? '-',
                     'القسم' => $row->employee->department->name_ar ?? $row->employee->department->name ?? '-',
                     'التاريخ' => $row->date?->format('Y-m-d'),
                     'اليوم' => $days[$row->date?->format('l')] ?? '-',
@@ -304,6 +333,8 @@ class ReportsCenterController extends Controller
         if ($reportType === 'daily') {
             $query = AttendanceRecord::with(['employee.user', 'employee.department'])
                 ->latest('date');
+
+            $this->applyEmployeeSearchToRelatedEmployeeQuery($query, $search);
 
             if ($from) {
                 $query->whereDate('date', '>=', $from);
@@ -325,6 +356,7 @@ class ReportsCenterController extends Controller
             $data = $query->get()->map(function ($row) {
                 return [
                     'الموظف' => $row->employee->user->name ?? '-',
+                    'كود الموظف' => $row->employee->employee_code ?? '-',
                     'القسم' => $row->employee->department->name_ar ?? $row->employee->department->name ?? '-',
                     'التاريخ' => $row->date?->format('Y-m-d'),
                     'الحضور' => $row->check_in?->format('H:i') ?? '-',
@@ -342,6 +374,8 @@ class ReportsCenterController extends Controller
             $query = LeaveRequest::with(['employee.user', 'leaveType', 'approvedBy'])
                 ->latest();
 
+            $this->applyEmployeeSearchToRelatedEmployeeQuery($query, $search);
+
             if ($from) {
                 $query->whereDate('start_date', '>=', $from);
             }
@@ -358,6 +392,7 @@ class ReportsCenterController extends Controller
             $data = $query->get()->map(function ($row) {
                 return [
                     'الموظف' => $row->employee->user->name ?? '-',
+                    'كود الموظف' => $row->employee->employee_code ?? '-',
                     'نوع الإجازة' => $row->leaveType->name_ar ?? $row->leaveType->name ?? '-',
                     'من تاريخ' => $row->start_date?->format('Y-m-d'),
                     'إلى تاريخ' => $row->end_date?->format('Y-m-d'),
@@ -425,9 +460,10 @@ class ReportsCenterController extends Controller
         $reportType = $request->get('report_type', 'summary');
         $from = $request->get('from');
         $to = $request->get('to');
+        $search = $request->get('search');
 
         if ($reportType === 'summary') {
-            $rows = $this->buildSummaryReport($from, $to);
+            $rows = $this->buildSummaryReport($from, $to, $search);
 
             $pdf = Pdf::loadView('admin.reports.pdf.summary', [
                 'rows' => $rows,
@@ -439,10 +475,7 @@ class ReportsCenterController extends Controller
             return $pdf->download('summary-report.pdf');
         }
 
-
-
         if ($reportType === 'monthly_leaves') {
-
             $rows = $this->getMonthlyLeaves($request);
 
             $pdf = Pdf::loadView('admin.reports.pdf.monthly-leaves', [
@@ -458,6 +491,8 @@ class ReportsCenterController extends Controller
         if ($reportType === 'detailed') {
             $query = AttendanceRecord::with(['employee.user', 'employee.department'])
                 ->latest('date');
+
+            $this->applyEmployeeSearchToRelatedEmployeeQuery($query, $search);
 
             if ($from) {
                 $query->whereDate('date', '>=', $from);
@@ -489,10 +524,11 @@ class ReportsCenterController extends Controller
             return $pdf->download('detailed-report.pdf');
         }
 
-
         if ($reportType === 'daily') {
             $query = AttendanceRecord::with(['employee.user', 'employee.department'])
                 ->latest('date');
+
+            $this->applyEmployeeSearchToRelatedEmployeeQuery($query, $search);
 
             if ($from) {
                 $query->whereDate('date', '>=', $from);
@@ -511,7 +547,6 @@ class ReportsCenterController extends Controller
                 $query->whereHas('employee', fn($q) => $q->where('department_id', $deptId));
             }
 
-
             $rows = $query->get();
 
             $pdf = Pdf::loadView('admin.reports.pdf.daily', [
@@ -524,11 +559,11 @@ class ReportsCenterController extends Controller
             return $pdf->download('daily-report.pdf');
         }
 
-
-
         if ($reportType === 'leaves') {
             $query = LeaveRequest::with(['employee.user', 'leaveType', 'approvedBy'])
                 ->latest();
+
+            $this->applyEmployeeSearchToRelatedEmployeeQuery($query, $search);
 
             if ($from) {
                 $query->whereDate('start_date', '>=', $from);
@@ -604,10 +639,12 @@ class ReportsCenterController extends Controller
         return back()->with('error', 'هذا النوع من التقارير غير متاح للتصدير حاليًا');
     }
 
-    private function buildSummaryReport(?string $from, ?string $to): \Illuminate\Support\Collection
+    private function buildSummaryReport(?string $from, ?string $to, ?string $search = null): \Illuminate\Support\Collection
     {
         $employeesQuery = Employee::with(['user', 'department'])
             ->where('status', 'active');
+
+        $this->applyEmployeeSearchToEmployeeQuery($employeesQuery, $search);
 
         if (auth()->user()->hasRole('manager')) {
             $deptId = auth()->user()->employee?->department_id;
@@ -617,7 +654,6 @@ class ReportsCenterController extends Controller
         $employees = $employeesQuery->get();
 
         return $employees->map(function ($employee) use ($from, $to) {
-
             $attendanceQuery = AttendanceRecord::where('employee_id', $employee->id);
             $leaveQuery = LeaveRequest::where('employee_id', $employee->id);
             $permissionQuery = PermissionRequest::where('employee_id', $employee->id);
@@ -645,16 +681,13 @@ class ReportsCenterController extends Controller
 
             return [
                 'employee_name' => $employee->user->name ?? '-',
+                'employee_code' => $employee->employee_code ?? '-',
                 'department_name' => $employee->department->name_ar ?? '-',
-
                 'present_count' => (clone $attendanceQuery)->where('status', 'present')->count(),
                 'late_count' => (clone $attendanceQuery)->where('status', 'late')->count(),
                 'absent_count' => (clone $attendanceQuery)->where('status', 'absent')->count(),
                 'leave_count' => (clone $attendanceQuery)->where('status', 'leave')->count(),
-
                 'work_hours' => round(((clone $attendanceQuery)->sum('work_minutes')) / 60, 1),
-
-
                 'permissions_count' => (clone $permissionQuery)->count(),
                 'missions_count' => (clone $missionQuery)->count(),
                 'comp_off_count' => (clone $compOffQuery)->count(),

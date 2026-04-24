@@ -97,8 +97,16 @@ Route::middleware(['auth', 'role:admin,manager'])
     |--------------------------------------------------------------------------
     */
 
+        Route::get('/employees/import', [Admin\EmployeeController::class, 'importForm'])->name('employees.import.form');
+        Route::post('/employees/import', [Admin\EmployeeController::class, 'importExcel'])->name('employees.import');
+        Route::get('/employees/template/excel', [Admin\EmployeeController::class, 'downloadTemplate'])->name('employees.template.excel');
         Route::resource('employees', Admin\EmployeeController::class);
+
+        Route::get('/departments/import', [Admin\DepartmentController::class, 'importForm'])->name('departments.import.form');
+        Route::post('/departments/import', [Admin\DepartmentController::class, 'importExcel'])->name('departments.import');
+        Route::get('/departments/template/excel', [Admin\DepartmentController::class, 'downloadTemplate'])->name('departments.template.excel');
         Route::resource('departments', Admin\DepartmentController::class);
+
         Route::resource('shifts', Admin\ShiftController::class);
         Route::resource('holidays', Admin\HolidayController::class);
         Route::resource('leave-types', Admin\LeaveTypeController::class);
@@ -186,10 +194,9 @@ Route::middleware(['auth', 'role:admin,manager'])
     |--------------------------------------------------------------------------
     */
 
-        Route::view('/requests', 'admin.requests.index')->name('requests.index');
+        Route::get('/requests', [Admin\RequestCenterController::class, 'index'])->name('requests.index');
         Route::get('/inquiries', [Admin\InquiryController::class, 'index'])->name('inquiries.index');
         Route::view('/work-system', 'admin.work-system.index')->name('work-system.index');
-        // Route::view('/reports-center', 'admin.reports.index')->name('reports.index');
 
         Route::get('/attendance', [Admin\AttendanceController::class, 'index'])->name('attendance.index');
         Route::get('/leave-balances', [Admin\LeaveBalanceController::class, 'index'])->name('leave-balances.index');

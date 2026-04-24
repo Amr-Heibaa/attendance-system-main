@@ -20,15 +20,12 @@
             </div>
 
             <div>
-                <label class="block text-sm text-gray-600 mb-1">الموظف</label>
-                <select name="employee_id" class="w-full border border-gray-300 rounded-xl px-4 py-2.5">
-                    <option value="">كل الموظفين</option>
-                    @foreach($employees as $emp)
-                        <option value="{{ $emp->id }}" {{ (string)$employeeId === (string)$emp->id ? 'selected' : '' }}>
-                            {{ $emp->user->name }}
-                        </option>
-                    @endforeach
-                </select>
+                <label class="block text-sm text-gray-600 mb-1">بحث الموظف</label>
+                <input type="text"
+                    name="search"
+                    value="{{ request('search') }}"
+                    placeholder="اكتب الاسم أو كود الموظف"
+                    class="w-full border border-gray-300 rounded-xl px-4 py-2.5">
             </div>
 
             <div>
@@ -56,117 +53,133 @@
         </h3>
 
         @if($type === 'leaves')
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="bg-gray-50 text-gray-600">
-                            <th class="text-right py-3 px-4">الموظف</th>
-                            <th class="text-right py-3 px-4">نوع الإجازة</th>
-                            <th class="text-right py-3 px-4">من</th>
-                            <th class="text-right py-3 px-4">إلى</th>
-                            <th class="text-right py-3 px-4">الحالة</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        @forelse($results as $row)
-                            <tr>
-                                <td class="py-3 px-4">{{ $row->employee->user->name }}</td>
-                                <td class="py-3 px-4">{{ $row->leaveType->name_ar ?? '-' }}</td>
-                                <td class="py-3 px-4">{{ $row->start_date->format('Y/m/d') }}</td>
-                                <td class="py-3 px-4">{{ $row->end_date->format('Y/m/d') }}</td>
-                                <td class="py-3 px-4">{{ $row->status_label }}</td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="5" class="text-center py-8 text-gray-400">لا توجد نتائج</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-gray-50 text-gray-600">
+                        <th class="text-right py-3 px-4">الموظف</th>
+                        <th class="text-right py-3 px-4">كود الموظف</th>
+                        <th class="text-right py-3 px-4">نوع الإجازة</th>
+                        <th class="text-right py-3 px-4">من</th>
+                        <th class="text-right py-3 px-4">إلى</th>
+                        <th class="text-right py-3 px-4">الحالة</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($results as $row)
+                    <tr>
+                        <td class="py-3 px-4">{{ $row->employee->user->name }}</td>
+                        <td class="py-3 px-4">{{ $row->employee->employee_code ?? '-' }}</td>
+                        <td class="py-3 px-4">{{ $row->leaveType->name_ar ?? '-' }}</td>
+                        <td class="py-3 px-4">{{ $row->start_date->format('Y/m/d') }}</td>
+                        <td class="py-3 px-4">{{ $row->end_date->format('Y/m/d') }}</td>
+                        <td class="py-3 px-4">{{ $row->status_label }}</td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="6" class="text-center py-8 text-gray-400">لا توجد نتائج</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
         @endif
 
         @if($type === 'missions')
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="bg-gray-50 text-gray-600">
-                            <th class="text-right py-3 px-4">الموظف</th>
-                            <th class="text-right py-3 px-4">العنوان</th>
-                            <th class="text-right py-3 px-4">النوع</th>
-                            <th class="text-right py-3 px-4">التاريخ</th>
-                            <th class="text-right py-3 px-4">الحالة</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        @forelse($results as $row)
-                            <tr>
-                                <td class="py-3 px-4">{{ $row->employee->user->name }}</td>
-                                <td class="py-3 px-4">{{ $row->title }}</td>
-                                <td class="py-3 px-4">{{ $row->type_label }}</td>
-                                <td class="py-3 px-4">{{ $row->date->format('Y/m/d') }}</td>
-                                <td class="py-3 px-4">{{ $row->status_label }}</td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="5" class="text-center py-8 text-gray-400">لا توجد نتائج</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-gray-50 text-gray-600">
+                        <th class="text-right py-3 px-4">الموظف</th>
+                        <th class="text-right py-3 px-4">كود الموظف</th>
+                        <th class="text-right py-3 px-4">العنوان</th>
+                        <th class="text-right py-3 px-4">النوع</th>
+                        <th class="text-right py-3 px-4">التاريخ</th>
+                        <th class="text-right py-3 px-4">الحالة</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($results as $row)
+                    <tr>
+                        <td class="py-3 px-4">{{ $row->employee->user->name }}</td>
+                        <td class="py-3 px-4">{{ $row->employee->employee_code ?? '-' }}</td>
+                        <td class="py-3 px-4">{{ $row->title }}</td>
+                        <td class="py-3 px-4">{{ $row->type_label }}</td>
+                        <td class="py-3 px-4">{{ $row->date->format('Y/m/d') }}</td>
+                        <td class="py-3 px-4">{{ $row->status_label }}</td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="6" class="text-center py-8 text-gray-400">لا توجد نتائج</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
         @endif
 
         @if($type === 'permissions')
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="bg-gray-50 text-gray-600">
-                            <th class="text-right py-3 px-4">الموظف</th>
-                            <th class="text-right py-3 px-4">النوع</th>
-                            <th class="text-right py-3 px-4">التاريخ</th>
-                            <th class="text-right py-3 px-4">المدة</th>
-                            <th class="text-right py-3 px-4">الحالة</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        @forelse($results as $row)
-                            <tr>
-                                <td class="py-3 px-4">{{ $row->employee->user->name }}</td>
-                                <td class="py-3 px-4">{{ $row->type_label }}</td>
-                                <td class="py-3 px-4">{{ $row->date->format('Y/m/d') }}</td>
-                                <td class="py-3 px-4">{{ $row->minutes_count }} دقيقة</td>
-                                <td class="py-3 px-4">{{ $row->status_label }}</td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="5" class="text-center py-8 text-gray-400">لا توجد نتائج</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-gray-50 text-gray-600">
+                        <th class="text-right py-3 px-4">الموظف</th>
+                        <th class="text-right py-3 px-4">كود الموظف</th>
+                        <th class="text-right py-3 px-4">النوع</th>
+                        <th class="text-right py-3 px-4">التاريخ</th>
+                        <th class="text-right py-3 px-4">المدة</th>
+                        <th class="text-right py-3 px-4">الحالة</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($results as $row)
+                    <tr>
+                        <td class="py-3 px-4">{{ $row->employee->user->name }}</td>
+                        <td class="py-3 px-4">{{ $row->employee->employee_code ?? '-' }}</td>
+                        <td class="py-3 px-4">{{ $row->type_label }}</td>
+                        <td class="py-3 px-4">{{ $row->date->format('Y/m/d') }}</td>
+                        <td class="py-3 px-4">{{ $row->minutes_count }} دقيقة</td>
+                        <td class="py-3 px-4">{{ $row->status_label }}</td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="6" class="text-center py-8 text-gray-400">لا توجد نتائج</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
         @endif
 
         @if($type === 'late')
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="bg-gray-50 text-gray-600">
-                            <th class="text-right py-3 px-4">الموظف</th>
-                            <th class="text-right py-3 px-4">التاريخ</th>
-                            <th class="text-right py-3 px-4">وقت الحضور</th>
-                            <th class="text-right py-3 px-4">دقائق التأخير</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        @forelse($results as $row)
-                            <tr>
-                                <td class="py-3 px-4">{{ $row->employee->user->name }}</td>
-                                <td class="py-3 px-4">{{ $row->date->format('Y/m/d') }}</td>
-                                <td class="py-3 px-4">{{ $row->check_in?->format('H:i') ?? '-' }}</td>
-                                <td class="py-3 px-4">{{ $row->late_minutes }}</td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="4" class="text-center py-8 text-gray-400">لا توجد نتائج</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-gray-50 text-gray-600">
+                        <th class="text-right py-3 px-4">الموظف</th>
+                        <th class="text-right py-3 px-4">كود الموظف</th>
+                        <th class="text-right py-3 px-4">التاريخ</th>
+                        <th class="text-right py-3 px-4">وقت الحضور</th>
+                        <th class="text-right py-3 px-4">دقائق التأخير</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($results as $row)
+                    <tr>
+                        <td class="py-3 px-4">{{ $row->employee->user->name }}</td>
+                        <td class="py-3 px-4">{{ $row->employee->employee_code ?? '-' }}</td>
+                        <td class="py-3 px-4">{{ $row->date->format('Y/m/d') }}</td>
+                        <td class="py-3 px-4">{{ $row->check_in?->format('H:i') ?? '-' }}</td>
+                        <td class="py-3 px-4">{{ $row->late_minutes }}</td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="5" class="text-center py-8 text-gray-400">لا توجد نتائج</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
         @endif
     </div>
 

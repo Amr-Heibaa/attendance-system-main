@@ -97,18 +97,14 @@ $targetTypes = [
 
 
                 <div>
-                    <label class="block text-sm text-gray-600 mb-1">الموظف</label>
-                    <select name="employee_id" class="w-full border border-gray-300 rounded-xl px-4 py-2.5">
-                        <option value="">كل الموظفين</option>
-
-                        @foreach($employees as $employee)
-                        <option value="{{ $employee->id }}"
-                            {{ request('employee_id') == $employee->id ? 'selected' : '' }}>
-                            {{ $employee->user->name }}
-                        </option>
-                        @endforeach
-                    </select>
+                    <label class="block text-sm text-gray-600 mb-1">بحث الموظف</label>
+                    <input type="text"
+                        name="search"
+                        value="{{ request('search') }}"
+                        placeholder="اكتب الاسم أو كود الموظف"
+                        class="w-full border border-gray-300 rounded-xl px-4 py-2.5">
                 </div>
+
                 <div class="flex gap-3">
                     <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition">
                         عرض
@@ -155,6 +151,7 @@ $targetTypes = [
             <table class="w-full text-sm">
                 <thead>
                     <tr class="bg-gray-50 text-gray-600">
+                        <th class="text-right py-3 px-4 font-semibold">كود الموظف</th>
                         <th class="text-right py-3 px-4 font-semibold">الموظف</th>
                         <th class="text-right py-3 px-4 font-semibold">نوع الإجازة</th>
                         <th class="text-right py-3 px-4 font-semibold">من تاريخ</th>
@@ -167,6 +164,7 @@ $targetTypes = [
                 <tbody class="divide-y divide-gray-100">
                     @forelse($rows as $row)
                     <tr class="hover:bg-gray-50">
+                        <td class="py-3 px-4">{{ $row->employee->employee_code ?? '-' }}</td>
                         <td class="py-3 px-4">{{ $row->employee->user->name ?? '-' }}</td>
                         <td class="py-3 px-4">{{ $row->leaveType->name_ar ?? $row->leaveType->name ?? '-' }}</td>
                         <td class="py-3 px-4">{{ $row->start_date?->format('Y/m/d') }}</td>
@@ -194,6 +192,7 @@ $targetTypes = [
             <table class="w-full text-sm">
                 <thead>
                     <tr class="bg-gray-50 text-gray-600">
+                        <th class="text-right py-3 px-4 font-semibold">كود الموظف</th>
                         <th class="text-right py-3 px-4 font-semibold">المستخدم</th>
                         <th class="text-right py-3 px-4 font-semibold">العملية</th>
                         <th class="text-right py-3 px-4 font-semibold">نوع العنصر</th>
@@ -205,6 +204,7 @@ $targetTypes = [
                 <tbody class="divide-y divide-gray-100">
                     @forelse($rows as $row)
                     <tr class="hover:bg-gray-50">
+                        <td class="py-3 px-4">{{ $row->user?->employee_code ?? 'النظام' }}</td>
                         <td class="py-3 px-4">{{ $row->user?->name ?? 'النظام' }}</td>
                         <td class="py-3 px-4">{{ $auditActions[$row->action] ?? $row->action }}</td>
                         <td class="py-3 px-4">{{ $targetTypes[$row->target_type] ?? ($row->target_type ?? '-') }}</td>
@@ -254,6 +254,7 @@ $targetTypes = [
             <table class="w-full text-sm">
                 <thead>
                     <tr class="bg-gray-50 text-gray-600">
+                        <th class="text-right py-3 px-4 font-semibold">كود الموظف</th>
                         <th class="text-right py-3 px-4 font-semibold">الموظف</th>
                         <th class="text-right py-3 px-4 font-semibold">القسم</th>
                         <th class="text-right py-3 px-4 font-semibold">التاريخ</th>
@@ -269,6 +270,7 @@ $targetTypes = [
                 <tbody class="divide-y divide-gray-100">
                     @forelse($rows as $row)
                     <tr class="hover:bg-gray-50">
+                        <td class="py-3 px-4">{{ $row->employee->employee_code ?? '-' }}</td>
                         <td class="py-3 px-4">{{ $row->employee->user->name ?? '-' }}</td>
                         <td class="py-3 px-4">{{ $row->employee->department->name_ar ?? $row->employee->department->name ?? '-' }}</td>
                         <td class="py-3 px-4">{{ $row->date?->format('Y/m/d') }}</td>
@@ -349,6 +351,7 @@ $targetTypes = [
             <table class="w-full text-sm">
                 <thead>
                     <tr class="bg-gray-50 text-gray-600">
+                        <th class="text-right py-3 px-4 font-semibold">كود الموظف</th>
                         <th class="text-right py-3 px-4 font-semibold">الموظف</th>
                         <th class="text-right py-3 px-4 font-semibold">القسم</th>
                         <th class="text-right py-3 px-4 font-semibold">التاريخ</th>
@@ -362,6 +365,7 @@ $targetTypes = [
                 <tbody class="divide-y divide-gray-100">
                     @forelse($rows as $row)
                     <tr class="hover:bg-gray-50">
+                        <td class="py-3 px-4">{{ $row->employee->employee_code ?? '-' }}</td>
                         <td class="py-3 px-4">{{ $row->employee->user->name ?? '-' }}</td>
                         <td class="py-3 px-4">{{ $row->employee->department->name_ar ?? $row->employee->department->name ?? '-' }}</td>
                         <td class="py-3 px-4">{{ $row->date?->format('Y/m/d') }}</td>
@@ -415,6 +419,8 @@ $targetTypes = [
             <table class="w-full text-sm">
                 <thead>
                     <tr class="bg-gray-50 text-gray-600">
+
+                        <th class="text-right py-3 px-4 font-semibold">كود الموظف</th>
                         <th class="text-right py-3 px-4 font-semibold">الموظف</th>
                         <th class="text-right py-3 px-4 font-semibold">القسم</th>
                         <th class="text-right py-3 px-4 font-semibold">أيام الحضور</th>
@@ -431,6 +437,8 @@ $targetTypes = [
                 <tbody class="divide-y divide-gray-100">
                     @forelse($rows as $row)
                     <tr class="hover:bg-gray-50">
+
+                        <td class="py-3 px-4">{{ $row['employee_code'] }}</td>
                         <td class="py-3 px-4">{{ $row['employee_name'] }}</td>
                         <td class="py-3 px-4">{{ $row['department_name'] }}</td>
                         <td class="py-3 px-4">{{ $row['present_count'] }}</td>
